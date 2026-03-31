@@ -288,7 +288,6 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);text-align:center;paddi
   <nav class="header-nav">
     <span class="nav-link" onclick="scrollTo('zukan-section')">図鑑</span>
     <span class="nav-link" onclick="scrollTo('events-section')">イベント</span>
-    <span class="nav-link" onclick="openPostModal()">OGOBになる</span>
     <button class="btn-post" onclick="openPostModal()">図鑑に載る</button>
   </nav>
 </header>
@@ -337,7 +336,8 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);text-align:center;paddi
       <option>フリーランス</option><option>研究者</option>
     </select>
     <select class="sort-select" id="sort-select">
-      <option value="default">並び替え</option>
+      <option value="newest">新着順</option>
+      <option value="default">デフォルト</option>
       <option value="name">名前順</option>
       <option value="dept">学部順</option>
     </select>
@@ -406,6 +406,42 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);text-align:center;paddi
           <input type="text" id="post-hometown" placeholder="例：東京都 / 大阪府">
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>卒業年<span class="req">*</span></label>
+          <select id="post-gradyear">
+            <option value="">選択してください</option>
+            <option value="2030年卒">2030年卒</option>
+            <option value="2029年卒">2029年卒</option>
+            <option value="2028年卒">2028年卒</option>
+            <option value="2027年卒">2027年卒</option>
+            <option value="2026年卒">2026年卒</option>
+            <option value="2025年卒">2025年卒</option>
+            <option value="2024年卒">2024年卒</option>
+            <option value="2023年卒">2023年卒</option>
+            <option value="2022年卒">2022年卒</option>
+            <option value="2021年卒">2021年卒</option>
+            <option value="2020年卒">2020年卒</option>
+            <option value="2019年卒">2019年卒</option>
+            <option value="2018年卒">2018年卒</option>
+            <option value="2017年卒">2017年卒</option>
+            <option value="2016年卒">2016年卒</option>
+            <option value="2015年卒">2015年卒</option>
+            <option value="2014年卒">2014年卒</option>
+            <option value="2013年卒">2013年卒</option>
+            <option value="2012年卒">2012年卒</option>
+            <option value="2011年卒">2011年卒</option>
+            <option value="2010年卒">2010年卒</option>
+            <option value="在学中">在学中</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="opacity:0">　</label>
+          <div style="font-size:.78rem;color:var(--ink-light);line-height:1.8;padding-top:4px">
+            在学中の場合は「在学中」を<br>選択してください。
+          </div>
+        </div>
+      </div>
       <div class="form-group">
         <label>現在のお仕事<span class="req">*</span></label>
         <input type="text" id="post-job" placeholder="例：ITスタートアップ / プロダクトマネージャー">
@@ -413,19 +449,6 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);text-align:center;paddi
       <div class="form-group">
         <label>得意スキル（カンマ区切り）</label>
         <input type="text" id="post-skills" placeholder="例：UXデザイン, データ分析, 英語">
-      </div>
-      <div class="form-group">
-        <label>大学時代の写真をアップロード</label>
-        <div id="photo-upload-area" style="border:2px dashed rgba(0,0,0,.12);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;background:white" onclick="document.getElementById('photo-file').click()">
-          <div id="photo-preview-wrap" style="display:none;margin-bottom:10px">
-            <img id="photo-preview" style="max-height:120px;border-radius:8px;object-fit:cover"/>
-          </div>
-          <div id="photo-placeholder">
-            <div style="font-size:2rem;margin-bottom:6px">📸</div>
-            <div style="font-size:.82rem;color:var(--ink-light)">クリックして写真を選択<br><span style="font-size:.72rem;opacity:.6">JPG / PNG / WEBP（5MB以内）</span></div>
-          </div>
-        </div>
-        <input type="file" id="photo-file" accept="image/*" style="display:none" onchange="previewPhoto(this)">
       </div>
       <div class="form-group">
         <label>大学時代に力を入れたこと</label>
@@ -439,7 +462,7 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);text-align:center;paddi
         <label>現役生へのメッセージ<span class="req">*</span></label>
         <textarea id="post-message" placeholder="1年生に向けて、あなたが伝えたいことを。" style="min-height:96px"></textarea>
       </div>
-      <button class="btn-submit" id="post-submit" onclick="submitPost()">図鑑に掲載する →</button>
+      <button class="btn-submit" id="post-submit" type="button" onclick="submitPost()">図鑑に掲載する →</button>
     </div>
   </div>
 </div>
@@ -556,22 +579,7 @@ const GAS_URL = "YOUR_GAS_WEBAPP_URL";
 /* ============================================================
    PHOTO UPLOAD HELPER
 ============================================================ */
-let uploadedPhotoDataUrl = null;
-
-function previewPhoto(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('5MB以内の画像を選択してください', 'error'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    uploadedPhotoDataUrl = e.target.result;
-    document.getElementById('photo-preview').src = uploadedPhotoDataUrl;
-    document.getElementById('photo-preview-wrap').style.display = 'block';
-    document.getElementById('photo-placeholder').style.display = 'none';
-    document.getElementById('photo-upload-area').style.borderColor = 'var(--gold)';
-  };
-  reader.readAsDataURL(file);
-}
+/* 写真アップロードは廃止 → AI自動生成に変更 */
 
 /* ============================================================
    DATA
@@ -810,7 +818,153 @@ const EVENTS_DATA = [
   }
 ];
 
-let EXTRA_OGOBS = [];
+/* ============================================================
+   永続ストレージ（localStorage）— ページ更新後もデータを保持
+============================================================ */
+const LS_KEY = 'ogob_zukan_extra_v1';
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(e) { return []; }
+}
+
+function saveToStorage(arr) {
+  try {
+    // photoは容量が大きいので保存時は別キーに分離
+    const slim = arr.map(function(o) {
+      var copy = Object.assign({}, o);
+      delete copy.photo; // 画像は別キーで保存
+      return copy;
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(slim));
+    // 画像は個別キーで保存
+    arr.forEach(function(o) {
+      if (o.photo) {
+        try { localStorage.setItem(LS_KEY + '_photo_' + o.id, o.photo); } catch(e) {}
+      }
+    });
+  } catch(e) { console.log('localStorage save error:', e); }
+}
+
+function loadPhotosFromStorage(arr) {
+  return arr.map(function(o) {
+    if (!o.photo) {
+      var saved = localStorage.getItem(LS_KEY + '_photo_' + o.id);
+      if (saved) o.photo = saved;
+    }
+    return o;
+  });
+}
+
+let EXTRA_OGOBS = loadPhotosFromStorage(loadFromStorage());
+
+/* ============================================================
+   AI背景画像自動生成（新規登録OGOB用）
+   Claude APIにSVGを生成させ、カード画像として使用
+============================================================ */
+async function generateOgobCardImage(ogob) {
+  // jobCategoryごとのビジュアルテーマ定義
+  const themes = {
+    '起業家':    { bg:'#0D1B2A', ac:'#F5A623', icon:'🚀', mood:'dynamic startup energy, rocket launch, growth charts, circuit patterns' },
+    'エンジニア':{ bg:'#0A1628', ac:'#00D4AA', icon:'💻', mood:'code matrix, terminal green, binary streams, dark tech aesthetic' },
+    'コンサルタント':{ bg:'#1A1030', ac:'#9B6DFF', icon:'📊', mood:'strategy, network nodes, geometric precision, corporate excellence' },
+    'クリエイター':  { bg:'#1A0A20', ac:'#FF6B9D', icon:'🎨', mood:'colorful brush strokes, creative energy, artistic flow, vivid palette' },
+    '大手企業':  { bg:'#0D1A2A', ac:'#4A90D9', icon:'🏢', mood:'city skyline, professional network, global business, structured ambition' },
+    '公務員':    { bg:'#0A1A10', ac:'#2ECC71', icon:'🏛', mood:'civic architecture, national crest, policy networks, public trust' },
+    'フリーランス':  { bg:'#1A1208', ac:'#F0C040', icon:'⚡', mood:'freedom, open road, laptop café, sunrise productivity' },
+    '研究者':    { bg:'#080E1A', ac:'#00B8FF', icon:'🔬', mood:'microscope patterns, DNA helix, particle physics, discovery glow' },
+  };
+  const t = themes[ogob.jobCategory] || { bg:'#111827', ac:'#B8962E', icon:'✨', mood:'future vision, abstract ambition' };
+  
+  const prompt = `You are an expert SVG artist. Create a beautiful, abstract card background image as SVG for a person profile card.
+
+Person: ${ogob.name}
+Job: ${ogob.job}
+Vision: ${ogob.vision}
+Skills: ${ogob.skills.join(', ')}
+Visual theme: ${t.mood}
+Background color: ${t.bg}
+Accent color: ${t.ac}
+
+Requirements:
+- SVG viewBox="0 0 320 200" exactly
+- Dark background (${t.bg})
+- Abstract geometric/artistic elements using accent color (${t.ac}) and variations
+- Subtle grid or pattern in background
+- 2-3 large decorative shapes (circles, paths, polygons) with low opacity
+- Small bright accent elements for visual interest  
+- Corner accent lines (like a frame)
+- A subtle large number "5" watermark in bottom right (opacity 0.06)
+- NO text, NO face, NO human figure - pure abstract/geometric art only
+- The overall feel: ${t.mood}
+- Make it visually stunning and magazine-quality
+
+Return ONLY the complete SVG code starting with <svg and ending with </svg>. No explanation, no markdown.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const svgText = data.content.map(i => i.text || "").join("").trim();
+    // SVGを抽出
+    const svgMatch = svgText.match(/<svg[\s\S]*<\/svg>/i);
+    if (svgMatch) {
+      const b64 = btoa(unescape(encodeURIComponent(svgMatch[0])));
+      return "data:image/svg+xml;base64," + b64;
+    }
+    throw new Error("SVG not found in response");
+  } catch(e) {
+    console.log("AI画像生成失敗、フォールバック使用:", e);
+    // フォールバック: シンプルなSVGをその場で生成
+    return generateFallbackCardImage(ogob, t);
+  }
+}
+
+function generateFallbackCardImage(ogob, t) {
+  // APIが使えない場合のローカルSVG生成
+  const hash = ogob.name.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+  const r1 = 40 + (hash % 60), r2 = 30 + ((hash * 7) % 50);
+  const x1 = 60 + (hash % 200), y1 = 20 + ((hash * 3) % 120);
+  const x2 = 200 + (hash % 80), y2 = 60 + ((hash * 5) % 100);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+  <defs>
+    <radialGradient id="rfbg${ogob.id}" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="${t.bg}" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#050508" stop-opacity="1"/>
+    </radialGradient>
+  </defs>
+  <rect width="320" height="200" fill="url(#rfbg${ogob.id})"/>
+  <circle cx="${x1}" cy="${y1}" r="${r1 + 40}" fill="${t.ac}" opacity="0.07"/>
+  <circle cx="${x2}" cy="${y2}" r="${r2 + 30}" fill="${t.ac}" opacity="0.05"/>
+  <circle cx="${160 + (hash%60-30)}" cy="${100 + (hash%40-20)}" r="${r1}" fill="${t.ac}" opacity="0.12"/>
+  <line x1="0" y1="50" x2="320" y2="50" stroke="${t.ac}" stroke-width="0.4" opacity="0.12"/>
+  <line x1="0" y1="100" x2="320" y2="100" stroke="${t.ac}" stroke-width="0.4" opacity="0.12"/>
+  <line x1="0" y1="150" x2="320" y2="150" stroke="${t.ac}" stroke-width="0.4" opacity="0.12"/>
+  <line x1="80" y1="0" x2="80" y2="200" stroke="${t.ac}" stroke-width="0.4" opacity="0.12"/>
+  <line x1="160" y1="0" x2="160" y2="200" stroke="${t.ac}" stroke-width="0.4" opacity="0.12"/>
+  <line x1="240" y1="0" x2="240" y2="200" stroke="${t.ac}" stroke-width="0.4" opacity="0.12"/>
+  <rect x="0" y="0" width="32" height="2" fill="${t.ac}" opacity="0.7"/>
+  <rect x="0" y="0" width="2" height="32" fill="${t.ac}" opacity="0.7"/>
+  <rect x="288" y="0" width="32" height="2" fill="${t.ac}" opacity="0.7"/>
+  <rect x="318" y="0" width="2" height="32" fill="${t.ac}" opacity="0.7"/>
+  <rect x="0" y="198" width="32" height="2" fill="${t.ac}" opacity="0.4"/>
+  <rect x="288" y="198" width="32" height="2" fill="${t.ac}" opacity="0.4"/>
+  <text x="300" y="188" font-family="serif" font-size="48" font-weight="bold" fill="${t.ac}" opacity="0.06" text-anchor="end">5</text>
+  <text x="24" y="182" font-family="Arial" font-size="9" fill="${t.ac}" opacity="0.5">${ogob.jobCategory}</text>
+</svg>`;
+  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+}
 
 /* ============================================================
    大隈重信 推薦文生成
@@ -912,7 +1066,13 @@ function filterAndRender(){
       o.dept.includes(q)||(o.hometown&&o.hometown.includes(q));
     return mq&&(!dept||o.dept===dept)&&(!cat||o.jobCategory===cat);
   });
-  if(sort==='name') data.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+  if(sort==='newest'){
+    // EXTRA_OGOBsを先頭に（新規登録者が最初に来る）、残りはデフォルト順
+    const extras = data.filter(o=>EXTRA_OGOBS.some(e=>e.id===o.id)).reverse();
+    const originals = data.filter(o=>!EXTRA_OGOBS.some(e=>e.id===o.id));
+    data = [...extras, ...originals];
+  }
+  else if(sort==='name') data.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
   else if(sort==='dept') data.sort((a,b)=>a.dept.localeCompare(b.dept,'ja'));
   renderCards(data);
 }
@@ -1050,53 +1210,120 @@ function showToast(msg,type=''){
 }
 
 /* ============================================================
-   SUBMIT
+   ヘルパー: 職種カテゴリ自動判定 & テーマ取得
 ============================================================ */
-async function submitPost(){
-  const name=document.getElementById('post-name').value.trim();
-  const dept=document.getElementById('post-dept').value;
-  const job=document.getElementById('post-job').value.trim();
-  const vision=document.getElementById('post-vision').value.trim();
-  const message=document.getElementById('post-message').value.trim();
-  if(!name||!dept||!job||!vision||!message){showToast('必須項目をすべて入力してください','error');return}
-  const skills=document.getElementById('post-skills').value.split(/[,、]/).map(s=>s.trim()).filter(Boolean);
-  const btn=document.getElementById('post-submit');
-  btn.disabled=true;btn.textContent='登録中…';
-  const newO={
-    id:Date.now(),name,gender:document.getElementById('post-gender').value,
-    dept,gradYear:new Date().getFullYear()+'年卒（予定）',
-    hometown:document.getElementById('post-hometown').value.trim()||'—',
-    job,jobCategory:'大手企業',
-    skills:skills.length?skills:['未設定'],
-    activity:document.getElementById('post-activity').value.trim(),
-    vision,message,
-    photo: uploadedPhotoDataUrl || null,
-    emoji:['🌟','💫','⭐','🔥','🎯','💡','🌈','🦋','🎪','🎭'][Math.floor(Math.random()*10)],
-    featured:false
+function detectCategory(job) {
+  const j = job.toLowerCase();
+  if (/起業|創業|ceo|代表|founder|スタートアップ|npo/i.test(j)) return '起業家';
+  if (/エンジニア|engineer|開発|プログラ|swe|tech|it/i.test(j)) return 'エンジニア';
+  if (/コンサル|consul|戦略|mckinsey|bcg|accenture/i.test(j)) return 'コンサルタント';
+  if (/デザイン|クリエイ|映像|アート|ディレクター|ライター|メディア|journalist/i.test(j)) return 'クリエイター';
+  if (/公務員|省|庁|市役所|国連|unicef|政府|ngo/i.test(j)) return '公務員';
+  if (/フリーランス|freelance|独立|個人事業/i.test(j)) return 'フリーランス';
+  if (/研究|researcher|博士|phd|lab|大学院/i.test(j)) return '研究者';
+  return '大手企業';
+}
+
+const CARD_THEMES = {
+  '起業家':      { bg:'#0D1B2A', ac:'#F5A623' },
+  'エンジニア':  { bg:'#0A1628', ac:'#00D4AA' },
+  'コンサルタント':{ bg:'#1A1030', ac:'#9B6DFF' },
+  'クリエイター':{ bg:'#1A0A20', ac:'#FF6B9D' },
+  '大手企業':    { bg:'#0D1A2A', ac:'#4A90D9' },
+  '公務員':      { bg:'#0A1A10', ac:'#2ECC71' },
+  'フリーランス':{ bg:'#1A1208', ac:'#F0C040' },
+  '研究者':      { bg:'#080E1A', ac:'#00B8FF' },
+};
+function getTheme(cat) {
+  return CARD_THEMES[cat] || { bg:'#111827', ac:'#B8962E' };
+}
+
+/* ============================================================
+   SUBMIT — 完全同期版（async/await・disabled一切なし）
+============================================================ */
+function submitPost(){
+  var name    = document.getElementById('post-name').value.trim();
+  var dept    = document.getElementById('post-dept').value;
+  var job     = document.getElementById('post-job').value.trim();
+  var vision  = document.getElementById('post-vision').value.trim();
+  var message = document.getElementById('post-message').value.trim();
+
+  if(!name||!dept||!job||!vision||!message){
+    showToast('必須項目をすべて入力してください','error');
+    return;
+  }
+
+  var rawSkills = document.getElementById('post-skills').value;
+  var skills = rawSkills.split(/[,、]/).map(function(s){return s.trim();}).filter(Boolean);
+  var cat    = detectCategory(job);
+  var newId  = Date.now();
+  var emojis = ['🌟','💫','⭐','🔥','🎯','💡','🌈','🦋','🎪','🎭'];
+
+  var newO = {
+    id:       newId,
+    name:     name,
+    gender:   document.getElementById('post-gender').value,
+    dept:     dept,
+    gradYear: document.getElementById('post-gradyear').value || new Date().getFullYear() + '年卒（予定）',
+    hometown: document.getElementById('post-hometown').value.trim() || '—',
+    job:      job,
+    jobCategory: cat,
+    skills:   skills.length ? skills : ['未設定'],
+    activity: document.getElementById('post-activity').value.trim(),
+    vision:   vision,
+    message:  message,
+    photo:    null,
+    emoji:    emojis[newId % emojis.length],
+    featured: false
   };
-  if(USE_SUPABASE&&SB_URL!=="YOUR_SUPABASE_URL"){
-    try{await fetch(`${SB_URL}/rest/v1/ogobs`,{method:'POST',headers:{'apikey':SB_ANON,'Authorization':`Bearer ${SB_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(newO)})}catch(e){console.log(e)}
-  }
-  // GASスプレッドシートにも送信（写真以外）
-  if(GAS_URL!=="YOUR_GAS_WEBAPP_URL"){
-    const payload={type:'ogob',name,dept,hometown:newO.hometown,job,skills:newO.skills.join('、'),activity:newO.activity,vision,message,gender:newO.gender,ts:new Date().toISOString()};
-    try{await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})}catch(e){}
-  }
+
+  // フォールバック画像を即セット
+  newO.photo = generateFallbackCardImage(newO, getTheme(cat));
+
+  // データ追加 & ストレージ保存
   EXTRA_OGOBS.push(newO);
-  document.getElementById('stat-count').textContent=getAllOgobs().length;
+  saveToStorage(EXTRA_OGOBS);
+  var countEl = document.getElementById('stat-count');
+  if(countEl) countEl.textContent = getAllOgobs().length;
+
+  // フォームリセット
+  var fields = ['post-name','post-dept','post-hometown','post-gradyear','post-job',
+                'post-skills','post-activity','post-vision','post-message'];
+  for(var i=0; i<fields.length; i++){
+    var el = document.getElementById(fields[i]);
+    if(el) el.value = '';
+  }
+
+  // モーダルを閉じる・カードを描画
   closeModal('post-modal');
   filterAndRender();
-  showToast(`✨ ${name}さんが図鑑に載りました！`,'success');
-  ['post-name','post-dept','post-hometown','post-job','post-skills','post-activity','post-vision','post-message'].forEach(id=>document.getElementById(id).value='');
-  // 写真リセット
-  uploadedPhotoDataUrl=null;
-  document.getElementById('photo-file').value='';
-  document.getElementById('photo-preview-wrap').style.display='none';
-  document.getElementById('photo-placeholder').style.display='block';
-  document.getElementById('photo-upload-area').style.borderColor='rgba(0,0,0,.12)';
-  btn.disabled=false;btn.textContent='図鑑に掲載する →';
-  setTimeout(()=>openDetail(newO.id),650);
+  showToast('✨ ' + name + 'さんが図鑑に載りました！', 'success');
+
+  // 詳細を少し後に開く
+  setTimeout(function(){ openDetail(newO.id); }, 700);
+
+  // AI画像生成（完全バックグラウンド）
+  generateOgobCardImage(newO).then(function(imgSrc){
+    newO.photo = imgSrc;
+    saveToStorage(EXTRA_OGOBS); // AI画像もストレージに保存
+    filterAndRender();
+    showToast('🎨 ' + name + 'さんの専用画像ができました！', 'success');
+  }).catch(function(e){ console.log('AI img error:', e); });
+
+  // GAS送信（完全バックグラウンド）
+  if(GAS_URL !== 'YOUR_GAS_WEBAPP_URL'){
+    var payload = JSON.stringify({
+      type:'ogob', name:name, dept:dept, hometown:newO.hometown,
+      gradYear:newO.gradYear, job:job, skills:newO.skills.join('、'), activity:newO.activity,
+      vision:vision, message:message, gender:newO.gender,
+      ts:new Date().toISOString()
+    });
+    fetch(GAS_URL, {method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'}, body:payload
+    }).catch(function(){});
+  }
 }
+
 
 async function submitVisit(){
   const name=document.getElementById('visit-name').value.trim();
@@ -1150,7 +1377,12 @@ function observeFadeUp(root){
 ============================================================ */
 window.addEventListener('DOMContentLoaded',()=>{
   setTimeout(()=>document.getElementById('loading').classList.add('hidden'),2000);
-  renderCards(getAllOgobs());
+  // localStorageから復元した件数を反映
+  var countEl = document.getElementById('stat-count');
+  if(countEl) countEl.textContent = getAllOgobs().length;
+  // デフォルトは新着順に設定
+  document.getElementById('sort-select').value = 'newest';
+  filterAndRender();
   renderEvents();
   observeFadeUp();
   document.getElementById('search-input').addEventListener('input',filterAndRender);
